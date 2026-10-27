@@ -1,0 +1,29 @@
+{
+  "extensionName": {
+    "message": "ICS Extract"
+  },
+  "extensionDescription": {
+    "message": "Öffnet oder speichert die Kalendereinladung (text/calendar-Teil) einer angezeigten Nachricht als .ics-Datei"
+  },
+  "actionTitle": {
+    "message": "Kalendereinladung"
+  },
+  "menuOpen": {
+    "message": ".ics öffnen"
+  },
+  "menuSave": {
+    "message": ".ics speichern unter…"
+  },
+  "optionTeamsURLAsLocation": {
+    "message": "Microsoft-Teams-Beitrittslink als Ort des Termins verwenden"
+  },
+  "optionTeamsURLAsLocationHint": {
+    "message": "Teams-Einladungen enthalten als Ort nur \"Microsoft Teams-Besprechung\". Wenn aktiviert, wird der Ort in der gespeicherten .ics-Datei durch den Beitrittslink ersetzt, sodass Kalenderprogramme einen anklickbaren Link anzeigen."
+  },
+  "optionPrepareOpenFile": {
+    "message": "\".ics öffnen\" beim Anzeigen einer Einladung vorbereiten"
+  },
+  "optionPrepareOpenFileHint": {
+    "message": "Eine Datei kann nur dann mit dem Standard-Kalenderprogramm geöffnet werden, wenn sie beim Klick auf den Menüeintrag bereits existiert. Wenn aktiviert, wird die Einladung jeder angezeigten Nachricht in die Datei \"temp-ics-extract-invitation.ics\" im Download-Ordner geschrieben, wobei die vorherige überschrieben wird, sodass \".ics öffnen\" mit einem Klick funktioniert. Wenn deaktiviert, schreibt der erste Klick auf \".ics öffnen\" die Datei und ein zweiter Klick öffnet sie."
+  }
+}

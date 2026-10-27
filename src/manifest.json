@@ -1,7 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "ICS Extract",
-  "description": "Opens or saves the calendar invitation (text/calendar part) of a displayed message as an .ics file",
+  "name": "__MSG_extensionName__",
+  "description": "__MSG_extensionDescription__",
+  "default_locale": "en",
   "version": "1.0.0",
   "author": "Philip Helger",
   "homepage_url": "https://github.com/Helger-IT/ics-extract",
@@ -20,7 +21,7 @@
   },
   "message_display_action": {
     "type": "menu",
-    "default_title": "Calendar invitation",
+    "default_title": "__MSG_actionTitle__",
     "default_icon": "images/calendar-dark.svg",
     "theme_icons": [
       {
@@ -48,6 +49,7 @@
   "icons": {
     "16": "images/calendar-dark.svg",
     "32": "images/calendar-dark.svg",
-    "64": "images/calendar-dark.svg"
+    "64": "images/icon-64.png",
+    "128": "images/icon-128.png"
   }
 }

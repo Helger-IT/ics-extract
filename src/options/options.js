@@ -16,10 +16,14 @@
  */
 
 async function _init () {
+  for (const aElement of document.querySelectorAll ("[data-i18n]"))
+    aElement.textContent = browser.i18n.getMessage (aElement.dataset.i18n);
   const aSettings = await browser.storage.local.get (DEFAULT_SETTINGS);
-  const aCheckbox = document.getElementById ("teamsURLAsLocation");
-  aCheckbox.checked = aSettings.teamsURLAsLocation;
-  aCheckbox.addEventListener ("change", () => browser.storage.local.set ({ teamsURLAsLocation: aCheckbox.checked }));
+  for (const sKey of Object.keys (DEFAULT_SETTINGS)) {
+    const aCheckbox = document.getElementById (sKey);
+    aCheckbox.checked = aSettings[sKey];
+    aCheckbox.addEventListener ("change", () => browser.storage.local.set ({ [sKey]: aCheckbox.checked }));
+  }
 }
 
 document.addEventListener ("DOMContentLoaded", _init);

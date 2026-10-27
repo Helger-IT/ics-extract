@@ -11,9 +11,14 @@
 <body>
   <label>
     <input type="checkbox" id="teamsURLAsLocation">
-    <span>Use the Microsoft Teams join link as the event location</span>
+    <span data-i18n="optionTeamsURLAsLocation"></span>
   </label>
-  <p class="hint">Teams invitations only contain "Microsoft Teams Meeting" as location. When enabled, the location of the saved .ics file is replaced with the join URL, so calendar apps show a clickable link.</p>
+  <p class="hint" data-i18n="optionTeamsURLAsLocationHint"></p>
+  <label>
+    <input type="checkbox" id="prepareOpenFile">
+    <span data-i18n="optionPrepareOpenFile"></span>
+  </label>
+  <p class="hint" data-i18n="optionPrepareOpenFileHint"></p>
   <script src="../settings.js"></script>
   <script src="options.js"></script>
 </body>

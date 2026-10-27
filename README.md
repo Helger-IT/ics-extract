@@ -10,7 +10,8 @@ header toolbar becomes active. Its menu offers:
 * **Open .ics** - opens the invitation with the system's default calendar application. For technical
   reasons the file has to exist before the click, so whenever an invitation is displayed, it is
   written to `temp-ics-extract-invitation.ics` in the Downloads folder. This single file is overwritten
-  for every invitation.
+  for every invitation. This can be disabled in the options - then the first click on "Open .ics"
+  writes the file and a second click opens it.
 * **Save .ics as…** - opens a "Save as" dialog
 
 Inspired by [thunderbird-outlook-appointment](https://github.com/Leworoe/thunderbird-outlook-appointment)
@@ -36,5 +37,7 @@ For development, load `src/manifest.json` via "Add-ons and Themes" → gear icon
 
 # News and noteworthy
 
-v1.0.0 - work in progress
+v1.0.0 - 2026-10-27
 * Initial version
+* Options to use the Teams join URL as location and to prepare "Open .ics" on display
+* English and German localisation

@@ -16,4 +16,4 @@
  */
 
 // Default values of all options, also used as keys for storage.local
-const DEFAULT_SETTINGS = { teamsURLAsLocation: true };
+const DEFAULT_SETTINGS = { teamsURLAsLocation: true, prepareOpenFile: true };

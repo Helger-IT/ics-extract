@@ -94,13 +94,13 @@ async function _prepareOpenFile (nTabID, aMessage, sCalendarText) {
   const nDownloadID = await _downloadICS (await _createICS (sCalendarText), OPEN_FILENAME, false, "overwrite");
   const aPrevious = _readPrepared ();
   localStorage.setItem (LS_PREPARED, JSON.stringify ({ downloadID: nDownloadID, messageID: aMessage.id }));
-  console.log ("Prepared download " + nDownloadID + " for message " + aMessage.id);
   // Keep the list of saved files clean - this does not delete the file itself
   if (aPrevious && aPrevious.downloadID !== nDownloadID)
     await browser.downloads.erase ({ id: aPrevious.downloadID });
 }
 
-async function _updateActionState (nTabID, aMessage) {
+// bForcePrepare: prepare the file for "Open .ics" even if pre-writing on display is disabled
+async function _updateActionState (nTabID, aMessage, bForcePrepare) {
   let sCalendarText = null;
   if (aMessage) {
     try {
@@ -115,6 +115,9 @@ async function _updateActionState (nTabID, aMessage) {
     return;
   }
   await browser.messageDisplayAction.enable (nTabID);
+  const aSettings = await browser.storage.local.get (DEFAULT_SETTINGS);
+  if (!bForcePrepare && !aSettings.prepareOpenFile)
+    return;
   try {
     await _prepareOpenFile (nTabID, aMessage, sCalendarText);
   } catch (ex) {
@@ -127,9 +130,8 @@ function _openPrepared (aTab) {
   const aPrepared = _readPrepared ();
   const sTabMessageID = localStorage.getItem (LS_TAB_PREFIX + aTab.id);
   if (!aPrepared || String (aPrepared.messageID) !== sTabMessageID) {
-    // Another tab displayed an invitation in the meantime - prepare this one again, the next click opens it
-    console.warn ("Prepared file does not belong to the message of tab " + aTab.id + " - preparing again");
-    _getSingleDisplayedMessage (aTab.id).then (aMessage => _updateActionState (aTab.id, aMessage));
+    // Not prepared on display, or another tab displayed an invitation in the meantime - the next click opens it
+    _getSingleDisplayedMessage (aTab.id).then (aMessage => _updateActionState (aTab.id, aMessage, true));
     return;
   }
   browser.downloads.open (aPrepared.downloadID).catch (ex => {
@@ -164,13 +166,13 @@ browser.runtime.onInstalled.addListener (async () => {
   localStorage.clear ();
   // Menu entries survive an update or reload of the extension
   await browser.menus.removeAll ();
-  browser.menus.create ({ id: MENU_OPEN, title: "Open .ics", contexts: ["message_display_action_menu"] });
-  browser.menus.create ({ id: MENU_SAVE, title: "Save .ics as\u2026", contexts: ["message_display_action_menu"] });
+  browser.menus.create ({ id: MENU_OPEN, title: browser.i18n.getMessage ("menuOpen"), contexts: ["message_display_action_menu"] });
+  browser.menus.create ({ id: MENU_SAVE, title: browser.i18n.getMessage ("menuSave"), contexts: ["message_display_action_menu"] });
 });
 
 browser.messageDisplay.onMessagesDisplayed.addListener (async (aTab, aDisplayedMessages) => {
   const aMessages = aDisplayedMessages.messages;
-  await _updateActionState (aTab.id, aMessages.length === 1 ? aMessages[0] : null);
+  await _updateActionState (aTab.id, aMessages.length === 1 ? aMessages[0] : null, false);
 });
 
 // Deliberately not async - see _openPrepared

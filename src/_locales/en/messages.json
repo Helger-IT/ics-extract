@@ -1,0 +1,38 @@
+{
+  "extensionName": {
+    "message": "ICS Extract",
+    "description": "Name of the extension"
+  },
+  "extensionDescription": {
+    "message": "Opens or saves the calendar invitation (text/calendar part) of a displayed message as an .ics file",
+    "description": "Description of the extension"
+  },
+  "actionTitle": {
+    "message": "Calendar invitation",
+    "description": "Tooltip of the message header button"
+  },
+  "menuOpen": {
+    "message": "Open .ics",
+    "description": "Menu entry: open with the default calendar application"
+  },
+  "menuSave": {
+    "message": "Save .ics as…",
+    "description": "Menu entry: save via file dialog"
+  },
+  "optionTeamsURLAsLocation": {
+    "message": "Use the Microsoft Teams join link as the event location",
+    "description": "Option label"
+  },
+  "optionTeamsURLAsLocationHint": {
+    "message": "Teams invitations only contain \"Microsoft Teams Meeting\" as location. When enabled, the location of the saved .ics file is replaced with the join URL, so calendar apps show a clickable link.",
+    "description": "Option hint"
+  },
+  "optionPrepareOpenFile": {
+    "message": "Prepare \"Open .ics\" when an invitation is displayed",
+    "description": "Option label"
+  },
+  "optionPrepareOpenFileHint": {
+    "message": "Opening a file with the default calendar application only works for files that already exist when the menu entry is clicked. When enabled, the invitation of every displayed message is written to \"temp-ics-extract-invitation.ics\" in the download folder, overwriting the previous one, so \"Open .ics\" works with a single click. When disabled, the first click on \"Open .ics\" writes the file and a second click opens it.",
+    "description": "Option hint"
+  }
+}
