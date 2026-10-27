@@ -4,8 +4,14 @@ Thunderbird extension (Manifest V3, Thunderbird 128 or later) that saves the cal
 contained in a message as an `.ics` file.
 
 Outlook and Teams send meeting invitations as an inline `text/calendar` MIME part instead of a
-regular attachment. When such a message is displayed, the "Save invitation as .ics" button in the
-message header toolbar becomes active. Clicking it opens a "Save as" dialog for the `.ics` file.
+regular attachment. When such a message is displayed, the "Calendar invitation" button in the message
+header toolbar becomes active. Its menu offers:
+
+* **Open .ics** - opens the invitation with the system's default calendar application. For technical
+  reasons the file has to exist before the click, so whenever an invitation is displayed, it is
+  written to `temp-ics-extract-invitation.ics` in the Downloads folder. This single file is overwritten
+  for every invitation.
+* **Save .ics as…** - opens a "Save as" dialog
 
 Inspired by [thunderbird-outlook-appointment](https://github.com/Leworoe/thunderbird-outlook-appointment)
 by Leon Wolfgang Rönnpagel.

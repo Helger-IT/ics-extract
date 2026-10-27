@@ -15,6 +15,16 @@
  * limitations under the License.
  */
 
+const MENU_OPEN = "open-ics";
+const MENU_SAVE = "save-ics";
+
+// Fixed name of the file that is prepared in the Downloads folder for "Open .ics" - overwritten for every invitation
+const OPEN_FILENAME = "temp-ics-extract-invitation.ics";
+
+// localStorage keys - localStorage is used, because it can be read synchronously inside a user input handler
+const LS_PREPARED = "prepared";
+const LS_TAB_PREFIX = "tab-";
+
 // Object URLs of running downloads, keyed by download ID
 const s_aObjectURLs = new Map ();
 
@@ -47,52 +57,128 @@ async function _getSingleDisplayedMessage (nTabID) {
   return aList.messages.length === 1 ? aList.messages[0] : null;
 }
 
+async function _createICS (sCalendarText) {
+  const aSettings = await browser.storage.local.get (DEFAULT_SETTINGS);
+  return buildICS (sCalendarText, aSettings.teamsURLAsLocation);
+}
+
+// Start a download of the given .ics content and return its ID - throws if the user cancels the "Save as" dialog
+async function _downloadICS (sICS, sFilename, bSaveAs, sConflictAction) {
+  const sObjectURL = URL.createObjectURL (new Blob ([sICS], { type: "text/calendar;charset=utf-8" }));
+  try {
+    const nDownloadID = await browser.downloads.download ({
+      url: sObjectURL,
+      filename: sFilename,
+      saveAs: bSaveAs,
+      conflictAction: sConflictAction
+    });
+    s_aObjectURLs.set (nDownloadID, sObjectURL);
+    return nDownloadID;
+  } catch (ex) {
+    URL.revokeObjectURL (sObjectURL);
+    throw ex;
+  }
+}
+
+function _readPrepared () {
+  try {
+    return JSON.parse (localStorage.getItem (LS_PREPARED));
+  } catch (ex) {
+    return null;
+  }
+}
+
+// Write the .ics of a message to the fixed file, so that "Open .ics" can open it synchronously
+async function _prepareOpenFile (nTabID, aMessage, sCalendarText) {
+  localStorage.setItem (LS_TAB_PREFIX + nTabID, String (aMessage.id));
+  const nDownloadID = await _downloadICS (await _createICS (sCalendarText), OPEN_FILENAME, false, "overwrite");
+  const aPrevious = _readPrepared ();
+  localStorage.setItem (LS_PREPARED, JSON.stringify ({ downloadID: nDownloadID, messageID: aMessage.id }));
+  console.log ("Prepared download " + nDownloadID + " for message " + aMessage.id);
+  // Keep the list of saved files clean - this does not delete the file itself
+  if (aPrevious && aPrevious.downloadID !== nDownloadID)
+    await browser.downloads.erase ({ id: aPrevious.downloadID });
+}
+
 async function _updateActionState (nTabID, aMessage) {
-  let bEnable = false;
+  let sCalendarText = null;
   if (aMessage) {
     try {
-      bEnable = (await _findCalendarText (aMessage.id)) !== null;
+      sCalendarText = await _findCalendarText (aMessage.id);
     } catch (ex) {
       console.error ("Failed to inspect message " + aMessage.id, ex);
     }
   }
-  if (bEnable)
-    await browser.messageDisplayAction.enable (nTabID);
-  else
+  if (sCalendarText === null) {
+    localStorage.removeItem (LS_TAB_PREFIX + nTabID);
     await browser.messageDisplayAction.disable (nTabID);
+    return;
+  }
+  await browser.messageDisplayAction.enable (nTabID);
+  try {
+    await _prepareOpenFile (nTabID, aMessage, sCalendarText);
+  } catch (ex) {
+    console.error ("Failed to prepare the .ics of message " + aMessage.id, ex);
+  }
 }
 
-// Disabled unless the displayed message is known to contain a calendar part
-browser.messageDisplayAction.disable ();
+// Must be called synchronously from the menu click - downloads.open only works inside a user input handler
+function _openPrepared (aTab) {
+  const aPrepared = _readPrepared ();
+  const sTabMessageID = localStorage.getItem (LS_TAB_PREFIX + aTab.id);
+  if (!aPrepared || String (aPrepared.messageID) !== sTabMessageID) {
+    // Another tab displayed an invitation in the meantime - prepare this one again, the next click opens it
+    console.warn ("Prepared file does not belong to the message of tab " + aTab.id + " - preparing again");
+    _getSingleDisplayedMessage (aTab.id).then (aMessage => _updateActionState (aTab.id, aMessage));
+    return;
+  }
+  browser.downloads.open (aPrepared.downloadID).catch (ex => {
+    console.error ("Failed to open download " + aPrepared.downloadID, ex);
+  });
+}
 
-browser.messageDisplay.onMessagesDisplayed.addListener (async (aTab, aDisplayedMessages) => {
-  const aMessages = aDisplayedMessages.messages;
-  await _updateActionState (aTab.id, aMessages.length === 1 ? aMessages[0] : null);
-});
-
-browser.messageDisplayAction.onClicked.addListener (async aTab => {
+// Save the .ics of the displayed message via "Save as" dialog
+async function _saveAs (aTab) {
   const aMessage = await _getSingleDisplayedMessage (aTab.id);
   if (!aMessage)
     return;
   const sCalendarText = await _findCalendarText (aMessage.id);
   if (sCalendarText === null)
     return;
-
-  const aSettings = await browser.storage.local.get (DEFAULT_SETTINGS);
-  const sICS = buildICS (sCalendarText, aSettings.teamsURLAsLocation);
-
-  const sObjectURL = URL.createObjectURL (new Blob ([sICS], { type: "text/calendar;charset=utf-8" }));
   try {
-    const nDownloadID = await browser.downloads.download ({
-      url: sObjectURL,
-      filename: buildFilename (aMessage.subject),
-      saveAs: true
-    });
-    s_aObjectURLs.set (nDownloadID, sObjectURL);
+    await _downloadICS (await _createICS (sCalendarText), buildFilename (aMessage.subject), true, "uniquify");
   } catch (ex) {
     // Also thrown when the user cancels the "Save as" dialog
-    URL.revokeObjectURL (sObjectURL);
   }
+}
+
+// Disabled unless the displayed message is known to contain a calendar part
+browser.messageDisplayAction.disable ();
+
+browser.runtime.onStartup.addListener (() => {
+  // Message, tab and download IDs of the previous session are meaningless
+  localStorage.clear ();
+});
+
+browser.runtime.onInstalled.addListener (async () => {
+  localStorage.clear ();
+  // Menu entries survive an update or reload of the extension
+  await browser.menus.removeAll ();
+  browser.menus.create ({ id: MENU_OPEN, title: "Open .ics", contexts: ["message_display_action_menu"] });
+  browser.menus.create ({ id: MENU_SAVE, title: "Save .ics as\u2026", contexts: ["message_display_action_menu"] });
+});
+
+browser.messageDisplay.onMessagesDisplayed.addListener (async (aTab, aDisplayedMessages) => {
+  const aMessages = aDisplayedMessages.messages;
+  await _updateActionState (aTab.id, aMessages.length === 1 ? aMessages[0] : null);
+});
+
+// Deliberately not async - see _openPrepared
+browser.menus.onClicked.addListener ((aInfo, aTab) => {
+  if (aInfo.menuItemId === MENU_OPEN)
+    _openPrepared (aTab);
+  else if (aInfo.menuItemId === MENU_SAVE)
+    _saveAs (aTab);
 });
 
 browser.downloads.onChanged.addListener (aDelta => {
